@@ -1,0 +1,14 @@
+repositories:
+  - name: ingress-nginx
+    url: https://kubernetes.github.io/ingress-nginx
+
+# Configure releases
+releases:
+  - name: ingress-nginx
+    namespace: ingress
+    createNamespace: true
+    chart: ingress-nginx/ingress-nginx
+    wait: true
+    timeout: 300    
+    values:
+      - ./values/ingress-nginx/base.yaml
