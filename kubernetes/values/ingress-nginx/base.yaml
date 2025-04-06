@@ -1,0 +1,38 @@
+controller:
+  service:
+    type: NodePort
+    externalTrafficPolicy: Local
+    nodePorts:
+      http: 30080  
+      https: 30443 
+
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+  # Internal DNS settings
+  config:
+    use-forwarded-headers: "true"
+    compute-full-forwarded-for: "true"
+
+  # No external DNS
+  podAnnotations:
+    external-dns.alpha.kubernetes.io/hostname: ""  # Disable external DNS
+
+  # Security (tighten for internal networks)
+  allow-snippet-annotations: false  # Disable risky snippets
+  enable-ssl-passthrough: false     # Disable unless needed
+
+defaultBackend:
+  enabled: true
+  resources:
+    requests:
+      cpu: 5m
+      memory: 10Mi
