@@ -3,7 +3,7 @@ resource "proxmox_virtual_environment_vm" "talos-master-1" {
   node_name = "node1"
 
   agent {
-    enabled = true
+    enabled = false
   }
 
   operating_system {
@@ -50,7 +50,7 @@ resource "proxmox_virtual_environment_vm" "talos-worker-1" {
   node_name = "node1"
 
   agent {
-    enabled = true
+    enabled = false
   }
 
   operating_system {
@@ -113,13 +113,7 @@ data "talos_machine_configuration" "machineconfig_cp" {
   machine_type     = "controlplane"
   machine_secrets  = talos_machine_secrets.machine_secrets.machine_secrets
   config_patches = [
-    yamlencode({
-      machine = {
-        install = {
-          disk = "/dev/vda" # Match Proxmox's disk interface (e.g., "/dev/vda" for virtio)
-        }
-      }
-    })
+    file("${path.module}/patches/controlplane.yaml")
   ]
 }
 
@@ -170,7 +164,7 @@ data "talos_cluster_health" "health" {
   endpoints              = data.talos_client_configuration.talosconfig.endpoints
   skip_kubernetes_checks = true
   timeouts = {
-    read = "180s"
+    read = "300s"
   }
 }
 

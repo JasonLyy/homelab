@@ -37,12 +37,6 @@ provider "proxmox" {
   # }
 }
 
-variable "proxmox_api_token" {
-  description = "Proxmox API token"
-  type        = string
-  sensitive   = true
-}
-
 variable "proxmox_api_url" {
   description = "Proxmox API URL"
   type        = string

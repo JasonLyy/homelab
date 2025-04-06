@@ -1,0 +1,5 @@
+cluster:
+  allowSchedulingOnControlPlanes: true
+machine:
+  install:
+    disk: "/dev/vda" # matches proxmox virtio disk
