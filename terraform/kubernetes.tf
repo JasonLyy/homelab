@@ -11,7 +11,7 @@ resource "proxmox_virtual_environment_vm" "talos-master-1" {
   }
 
   cpu {
-    cores = 2
+    cores = 4
     type  = "x86-64-v2-AES"
   }
 
@@ -58,12 +58,12 @@ resource "proxmox_virtual_environment_vm" "talos-worker-1" {
   }
 
   cpu {
-    cores = 1
+    cores = 4
     type  = "x86-64-v2-AES"
   }
 
   memory {
-    dedicated = 1074 // 1024 MiB
+    dedicated = 4293 // 4096 MiB
   }
 
   network_device {
@@ -77,7 +77,7 @@ resource "proxmox_virtual_environment_vm" "talos-worker-1" {
     interface    = "virtio0"
     iothread     = true
     discard      = "on"
-    size         = 20
+    size         = 180
   }
 
   initialization {
