@@ -1,0 +1,40 @@
+grafana.ini:
+  paths:
+    data: /var/lib/grafana
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+  analytics:
+    check_for_updates: false
+
+service:
+  type: ClusterIP
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - grafana.local
+  paths:
+    - path: /
+      pathType: Prefix
+  tls: []
+
+persistence:
+  enabled: true
+  storageClassName: "local-path"
+  accessModes: ["ReadWriteOnce"]
+  size: 10Gi
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+sidecar:
+  dashboards:
+    enabled: false
+  datasources:
+    enabled: false
