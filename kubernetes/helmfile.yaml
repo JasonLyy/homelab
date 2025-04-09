@@ -20,6 +20,12 @@ releases:
     values:
       - ./values/grafana/base.yaml
 
+  - name: loki
+    namespace: monitoring
+    chart: grafana/loki
+    values:
+      - ./values/loki/base.yaml
+
 # todo: replace this so it is removed on lifecycle
 hooks:
   - events: ["prepare"]
