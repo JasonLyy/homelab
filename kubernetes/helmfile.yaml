@@ -26,6 +26,14 @@ releases:
     values:
       - ./values/loki/base.yaml
 
+  - name: alloy
+    namespace: monitoring
+    chart: grafana/alloy
+    wait: true
+    timeout: 300
+    values:
+      - ./values/alloy/base.yaml
+
 # todo: replace this so it is removed on lifecycle
 hooks:
   - events: ["prepare"]
