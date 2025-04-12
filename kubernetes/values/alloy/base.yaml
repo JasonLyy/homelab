@@ -1,0 +1,58 @@
+rbac:
+  # Create the necessary RBAC resources for Alloy to collect cluster metrics
+  create: true
+
+# todo: action items from https://developer-friendly.blog/blog/2025/03/17/migration-from-promtail-to-alloy-the-what-the-why-and-the-how/#tracing-servicegraph
+alloy:
+  configMap:
+    name: config-alloy
+    content: |-
+      logging {
+        level = "info"
+      }
+
+      // Kubernetes discovery for scraping pods and services
+      discovery.kubernetes "pods" {
+        role = "pod"
+      }
+
+      discovery.kubernetes "nodes" {
+        role = "node"
+      }
+
+      // Configure Loki log collection
+      loki.source.kubernetes "pods" {
+        targets = discovery.kubernetes.pods.targets
+        forward_to = [loki.write.local.receiver]
+      }
+
+      // Write logs to the Loki instance
+      loki.write "local" {
+        endpoint {
+          url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
+        }
+      }
+
+# Create service account with appropriate permissions
+serviceAccount:
+  create: true
+
+# Controller configuration
+controller:
+  type: "statefulset"
+  replicas: 1
+
+# Resource requirements for homelab environment
+resources:
+  limits:
+    cpu: 300m
+    memory: 256Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+
+# Tolerate running on control plane nodes if needed
+tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists
+    effect: NoSchedule
