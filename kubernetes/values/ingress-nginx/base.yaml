@@ -5,10 +5,13 @@ controller:
     nodePorts:
       http: 30080
       https: 30443
+      tcp:
+        5140: 30514
 
   replicaCount: 1
   autoscaling:
     enabled: false
+
   resources:
     requests:
       cpu: 100m
@@ -21,12 +24,17 @@ controller:
     use-forwarded-headers: "true"
     compute-full-forwarded-for: "true"
 
+    log-format-escape-json: "true"
+    log-format-upstream: '{"time": "$time_iso8601", "remote_addr": "$remote_addr", "request_id": "$req_id", "remote_user": "$remote_user", "bytes_sent": $bytes_sent, "request_time": $request_time, "status": $status, "host": "$host", "request_method": "$request_method", "request_uri": "$request_uri", "http_referer": "$http_referer", "http_user_agent": "$http_user_agent", "request_length": $request_length, "ssl_protocol": "$ssl_protocol", "ssl_cipher": "$ssl_cipher", "http_x_forwarded_for": "$http_x_forwarded_for", "upstream_addr": "$upstream_addr", "upstream_response_time": "$upstream_response_time", "upstream_status": "$upstream_status"}'
+
   podAnnotations:
     external-dns.alpha.kubernetes.io/hostname: "" # Disable external DNS
-
   # Security (tighten for internal networks)
   allow-snippet-annotations: false # Disable risky snippets
   enable-ssl-passthrough: false # Disable unless needed
+
+tcp:
+  "5140": "monitoring/alloy:5140"
 
 defaultBackend:
   enabled: true
