@@ -15,7 +15,6 @@ alloy:
       discovery.kubernetes "pods" {
         role = "pod"
       }
-
       discovery.kubernetes "nodes" {
         role = "node"
       }
@@ -32,6 +31,21 @@ alloy:
           url = "http://loki.monitoring.svc.cluster.local:3100/loki/api/v1/push"
         }
       }
+
+      // Accept Syslog TCP from OPNsense
+      loki.source.syslog "opnsense" {
+        listener {
+          protocol = "tcp"
+          address = "0.0.0.0:5140"
+          labels = { source = "opnsense" }
+        }
+        forward_to = [loki.write.local.receiver]
+      }
+  extraPorts:
+    - name: syslog-tcp
+      port: 5140
+      targetPort: 5140
+      protocol: TCP
 
 # Create service account with appropriate permissions
 serviceAccount:
@@ -56,3 +70,34 @@ tolerations:
   - key: node-role.kubernetes.io/control-plane
     operator: Exists
     effect: NoSchedule
+
+ingress:
+  enabled: true
+  ingressClassName: nginx
+  hosts:
+    - alloy.local
+  paths:
+    - path: /
+      pathType: Prefix
+  tls: []
+
+# Pod-level security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  fsGroup: 1000
+  seccompProfile:
+    type: RuntimeDefault
+
+# Container-level security context
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1000
+  seccompProfile:
+    type: RuntimeDefault

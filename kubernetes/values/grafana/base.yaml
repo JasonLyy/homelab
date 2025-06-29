@@ -25,6 +25,9 @@ persistence:
   accessModes: ["ReadWriteOnce"]
   size: 10Gi
 
+initChownData:
+  enabled: false
+
 resources:
   limits:
     cpu: 200m

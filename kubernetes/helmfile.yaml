@@ -33,9 +33,4 @@ releases:
     timeout: 300
     values:
       - ./values/alloy/base.yaml
-
-# todo: replace this so it is removed on lifecycle
-hooks:
-  - events: ["prepare"]
-    command: "kubectl"
-    args: ["apply", "-k", "./kustomize/local-path-provisioner"]
+# todo: apply kustomize automatically
