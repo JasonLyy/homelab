@@ -13,18 +13,21 @@ releases:
     timeout: 300
     values:
       - ./values/ingress-nginx/base.yaml
+      - ./security.yaml
 
   - name: grafana
     namespace: monitoring
     chart: grafana/grafana
     values:
       - ./values/grafana/base.yaml
+      - ./security.yaml
 
   - name: loki
     namespace: monitoring
     chart: grafana/loki
     values:
       - ./values/loki/base.yaml
+      - ./security.yaml
 
   - name: alloy
     namespace: monitoring
@@ -33,4 +36,4 @@ releases:
     timeout: 300
     values:
       - ./values/alloy/base.yaml
-# todo: apply kustomize automatically
+      - ./security.yaml
