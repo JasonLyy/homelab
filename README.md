@@ -90,6 +90,7 @@ helmfile sync
 
 This will deploy:
 - Ingress NGINX Controller
+- Prometheus Operator (kube-prometheus-stack)
 - Grafana dashboard
 - Loki log aggregation
 - Alloy observability agent
@@ -99,6 +100,8 @@ This will deploy:
 After deployment, you can access the following services:
 
 - Grafana: http://grafana.local
+- Prometheus: http://prometheus.local
+- Alertmanager: http://alertmanager.local
 - Alloy: http://alloy.local
 - Ingress controller: NodePort 30080 (HTTP) and 30443 (HTTPS)
 - Syslog for OPNsense: TCP port 5140 (forwarded through ingress)
@@ -114,9 +117,11 @@ After deployment, you can access the following services:
 - **Ingress NGINX**: Kubernetes ingress controller
 
 ### Observability Stack
+- **Prometheus**: Metrics collection and alerting engine
 - **Grafana**: Visualization and dashboarding
 - **Loki**: Log aggregation system
-- **Alloy**: All-in-one observability agent (replaces Promtail)
+- **Alloy**: All-in-one observability agent for metrics and logs
+- **Alertmanager**: Alert routing and management
 
 ## Security
 

@@ -25,8 +25,30 @@ persistence:
   accessModes: ["ReadWriteOnce"]
   size: 10Gi
 
+# Security context for non-root operation
+securityContext:
+  runAsNonRoot: true
+  runAsUser: 472
+  runAsGroup: 472
+  fsGroup: 472
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop:
+      - ALL
+  seccompProfile:
+    type: RuntimeDefault
+
 initChownData:
-  enabled: false
+  enabled: true
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+    allowPrivilegeEscalation: false
+    capabilities:
+      add: ["CHOWN", "FOWNER"]
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
 
 resources:
   limits:
@@ -38,6 +60,28 @@ resources:
 
 sidecar:
   dashboards:
-    enabled: false
+    enabled: true
+    searchNamespace: monitoring
+    # Look for ConfigMaps with this label
+    label: grafana_dashboard
+    labelValue: "1"
+    provider:
+      foldersFromFilesStructure: true
   datasources:
-    enabled: false
+    enabled: true
+    searchNamespace: monitoring
+
+# Configure Prometheus as a data source
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Prometheus
+        type: prometheus
+        url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090
+        access: proxy
+        isDefault: true
+      - name: Loki
+        type: loki
+        url: http://loki.monitoring.svc.cluster.local:3100
+        access: proxy

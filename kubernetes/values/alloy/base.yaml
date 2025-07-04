@@ -18,6 +18,9 @@ alloy:
       discovery.kubernetes "nodes" {
         role = "node"
       }
+      discovery.kubernetes "services" {
+        role = "service"
+      }
 
       // Configure Loki log collection
       loki.source.kubernetes "pods" {

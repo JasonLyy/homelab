@@ -1,0 +1,206 @@
+# Disable Grafana since it's deployed separately
+grafana:
+  enabled: false
+  # Even though Grafana is disabled, we want the dashboards created as ConfigMaps
+  # so our separate Grafana deployment can discover them
+  forceDeployDashboards: true
+  defaultDashboardsEnabled: true
+  sidecar:
+    dashboards:
+      enabled: true
+      label: grafana_dashboard
+      labelValue: "1"
+      annotations: {}
+      searchNamespace: ALL
+      provider:
+        foldersFromFilesStructure: true
+
+# Prometheus configuration
+prometheus:
+  prometheusSpec:
+    # Use local-path-provisioner for storage
+    storageSpec:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+
+    # Resource limits for homelab (reduced for initial install)
+    resources:
+      limits:
+        cpu: 500m
+        memory: 512Mi
+      requests:
+        cpu: 100m
+        memory: 256Mi
+
+    # Retention settings
+    retention: 15d
+    retentionSize: 8GB
+
+    # Security context to work with local-path-provisioner
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Init container to fix permissions on volume
+    initContainers:
+      - name: fix-permissions
+        image: busybox:1.35
+        command:
+          - "sh"
+          - "-c"
+          - |
+            echo "Setting up permissions for Prometheus data directory..."
+            echo "Current permissions:"
+            ls -la /prometheus/
+            echo "Changing ownership and permissions..."
+            chown -R 65534:65534 /prometheus
+            chmod -R 755 /prometheus
+            echo "After changes:"
+            ls -la /prometheus/
+        volumeMounts:
+          - name: prometheus-kube-prometheus-stack-prometheus-db
+            mountPath: /prometheus
+            subPath: prometheus-db
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          capabilities:
+            add: ["CHOWN", "FOWNER"]
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+
+# AlertManager configuration
+alertmanager:
+  alertmanagerSpec:
+    # Use local-path-provisioner for storage
+    storage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 2Gi
+
+    # Resource limits for homelab
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 100m
+        memory: 64Mi
+
+    # Security context to work with local-path-provisioner
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      runAsGroup: 65534
+      fsGroup: 65534
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+
+    # Init container to fix permissions on volume
+    initContainers:
+      - name: fix-permissions
+        image: busybox:1.35
+        command:
+          - "sh"
+          - "-c"
+          - |
+            echo "Setting up permissions for AlertManager data directory..."
+            mkdir -p /alertmanager
+            chmod -R 755 /alertmanager
+            chown -R 65534:65534 /alertmanager
+            ls -la /alertmanager/
+        volumeMounts:
+          - name: alertmanager-kube-prometheus-stack-alertmanager-db
+            mountPath: /alertmanager
+        securityContext:
+          runAsNonRoot: false
+          runAsUser: 0
+          allowPrivilegeEscalation: false
+          capabilities:
+            add: ["CHOWN", "FOWNER"]
+            drop: ["ALL"]
+          seccompProfile:
+            type: RuntimeDefault
+
+# Node Exporter configuration
+nodeExporter:
+  enabled: true
+  # Node exporter needs special privileges to access host metrics
+  hostNetwork: true
+  hostPID: true
+  securityContext:
+    runAsNonRoot: false
+    runAsUser: 0
+    allowPrivilegeEscalation: false
+    capabilities:
+      add: ["SYS_TIME"]
+      drop: ["ALL"]
+    seccompProfile:
+      type: RuntimeDefault
+
+# Kube State Metrics configuration
+kubeStateMetrics:
+  enabled: true
+
+# Prometheus Operator configuration
+prometheusOperator:
+  resources:
+    limits:
+      cpu: 200m
+      memory: 100Mi
+    requests:
+      cpu: 100m
+      memory: 50Mi
+
+# Default rules and service monitors
+defaultRules:
+  create: true
+  rules:
+    alertmanager: true
+    etcd: true
+    configReloaders: true
+    general: true
+    k8s: true
+    kubeApiserverAvailability: true
+    kubeApiserverBurnrate: true
+    kubeApiserverHistogram: true
+    kubeApiserverSlos: true
+    kubelet: true
+    kubeProxy: true
+    kubePrometheusGeneral: true
+    kubePrometheusNodeRecording: true
+    kubernetesApps: true
+    kubernetesResources: true
+    kubernetesStorage: true
+    kubernetesSystem: true
+    kubeScheduler: true
+    kubeStateMetrics: true
+    network: true
+    node: true
+    nodeExporterAlerting: true
+    nodeExporterRecording: true
+    prometheus: true
+    prometheusOperator: true
