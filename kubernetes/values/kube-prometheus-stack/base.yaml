@@ -83,6 +83,14 @@ prometheus:
             drop: ["ALL"]
           seccompProfile:
             type: RuntimeDefault
+  ingress:
+    enabled: true
+    ingressClassName: "nginx"
+    hosts:
+      - prometheus.local
+    paths:
+      - /
+    pathType: Prefix
 
 # AlertManager configuration
 alertmanager:
