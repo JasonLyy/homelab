@@ -1,0 +1,10 @@
+apiVersion: tailscale.com/v1alpha1
+kind: Connector
+metadata:
+  name: homelab-exit
+spec:
+  # To auto-approve exit node advertise, configure ACL autoApprovers for exit node tag.
+  # Example (in tailnet policy file):
+  # "autoApprovers": { "exitNode": ["tag:k8s"] }
+  hostname: homelab-exit
+  exitNode: true

@@ -5,6 +5,8 @@ repositories:
     url: https://grafana.github.io/helm-charts
   - name: prometheus-community
     url: https://prometheus-community.github.io/helm-charts
+  - name: tailscale
+    url: https://pkgs.tailscale.com/helmcharts
 
 releases:
   - name: ingress-nginx
@@ -48,3 +50,34 @@ releases:
     timeout: 600
     values:
       - ./values/kube-prometheus-stack/base.yaml
+
+  - name: tailscale-operator
+    namespace: tailscale
+    createNamespace: true
+    chart: tailscale/tailscale-operator
+    version: 1.86.5
+    wait: true
+    timeout: 300
+    values:
+      - ./values/tailscale-operator/base.yaml
+    # After install/upgrade, apply (or re-apply) the Connector CR to ensure exit node exists.
+    hooks:
+      # Ensure namespace allows privileged pods required for exit node functionality (sysctls & NET_ADMIN capabilities).
+      - events: [preSync]
+        command: kubectl
+        showlogs: true
+        args:
+          - label
+          - namespace
+          - tailscale
+          - pod-security.kubernetes.io/enforce=privileged
+          - pod-security.kubernetes.io/audit=privileged
+          - pod-security.kubernetes.io/warn=privileged
+          - --overwrite
+      - events: [postSync]
+        showlogs: true
+        command: kubectl
+        args:
+          - apply
+          - -f
+          - ./tailscale/connector-exitnode.yaml

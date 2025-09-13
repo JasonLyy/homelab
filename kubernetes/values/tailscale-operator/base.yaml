@@ -1,0 +1,5 @@
+oauth:
+  existingSecret: operator-oauth
+
+proxyClass:
+  create: false
