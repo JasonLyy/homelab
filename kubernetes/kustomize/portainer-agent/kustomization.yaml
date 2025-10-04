@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+# Minimal Portainer Agent overlay using upstream manifest as base.
+# Converts Service to NodePort.
+
+resources:
+  - https://downloads.portainer.io/ce2-33/portainer-agent-k8s-lb.yaml
+
+# JSON6902 patches keep this concise (no local manifest duplication).
+patches:
+  - target:
+      kind: Service
+      name: portainer-agent
+      namespace: portainer
+    patch: |-
+      - op: replace
+        path: /spec/type
+        value: NodePort
+      - op: add
+        path: /spec/ports/0/nodePort
+        value: 30901
+
+commonLabels:
+  app.kubernetes.io/name: portainer-agent
+  app.kubernetes.io/component: agent
+  app.kubernetes.io/part-of: portainer
+
+configurations: []
