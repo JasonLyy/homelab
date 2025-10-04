@@ -39,7 +39,7 @@ securityContext:
     type: RuntimeDefault
 
 initChownData:
-  enabled: true
+  enabled: false # disabled due to chown permission denied on existing PVC; fsGroup handles access
   securityContext:
     runAsNonRoot: false
     runAsUser: 0

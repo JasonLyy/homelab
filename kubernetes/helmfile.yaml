@@ -30,6 +30,9 @@ releases:
   - name: loki
     namespace: monitoring
     chart: grafana/loki
+    wait: true
+    timeout: 300
+    cleanupOnFail: true
     values:
       - ./values/loki/base.yaml
       - ./security.yaml
