@@ -20,6 +20,10 @@ This repository contains configurations for a Kubernetes homelab environment run
 - **Security**: Pod security contexts, non-root containers, capability dropping
 - **Secure Remote Access**: Tailscale Operator providing a Kubernetes-based exit node
 
+### Ancillary / External Management
+
+- **Portainer** (external VM/host): Used to deploy and manage a standalone Docker stack (e.g. Home Assistant) via GitOps-style synchronization with this repository.
+
 ## Prerequisites
 
 - [Terraform](https://www.terraform.io/downloads.html) (v1.0.0+)
@@ -148,6 +152,174 @@ helmfile destroy --selector name=tailscale-operator
 ```
 
 That will remove the CR, StatefulSet, and operator deployment.
+
+### Deploying Home Assistant via Portainer (Git-based Stack)
+
+This repository contains a standalone Docker Compose file at `docker/docker-compose.yaml` for running Home Assistant outside the Kubernetes cluster (recommended for easier host network / USB / multicast support). You can deploy it in Portainer without SSH access by pointing a Git-based stack at this repo.
+
+#### 1. Prerequisites
+
+- A running Portainer instance (CE or BE) with access to the Docker endpoint (local or remote agent).
+- This repository accessible via HTTPS (public) or with credentials / deploy key if private.
+
+#### 2. (If Private) Configure Git Credentials in Portainer
+
+1. In Portainer UI: Settings → Git credentials (or during stack creation if prompted).
+2. Provide either:
+   - Username + Personal Access Token (GitHub: repo scope at minimum), or
+   - Deploy key (read-only) added to the repository.
+
+#### 3. Create the Git-based Stack
+
+1. Navigate: Stacks → Add stack → Repository tab.
+2. Stack name: `homeassistant`.
+3. Repository URL: `https://github.com/<your-user>/homelab.git` (adjust for your fork/owner).
+4. Repository reference: `main` (or a tag / commit SHA to pin a version).
+5. Compose path: `docker/docker-compose.yaml` (no leading slash, relative to repo root).
+6. (Optional) Enable automatic updates:
+   - Poll: choose an interval (e.g. 5m/15m) – Portainer periodically pulls and redeploys on change.
+   - Webhook: after first deploy, Portainer provides a webhook URL; add it as a GitHub repository webhook (event: `push`).
+7. Click Retrieve (if your Portainer version exposes a button) to validate the file, then Deploy the stack.
+
+#### 4. First Startup & Access
+
+- Home Assistant will bind directly on the Docker host’s IP at `http://<host-ip>:8123` because `network_mode: host` is configured.
+- Initial container pull + setup may take several minutes; monitor logs in Portainer (Container → Logs).
+
+#### 5. Updating the Stack
+
+- Make changes to `docker/docker-compose.yaml` (e.g., pin image version, add volumes) and push to the tracked branch.
+- Auto-update (poll/webhook) will redeploy; otherwise manually open the stack → Update & redeploy.
+- To force pulling the latest `:stable` tag, use the Portainer action “Recreate / Pull latest image”.
+
+#### 6. Data Persistence & Backups
+
+- Persistent data is stored in the stack working directory bind mount (`./config` inside the stack’s Git working copy path that Portainer maintains). For portability you may alternatively convert to a named volume (see below).
+- To switch to a named volume (optional):
+  1. Edit compose file `volumes` section under the service to: `homeassistant_config:/config`.
+  2. Append at file end: `volumes:\n  homeassistant_config:`.
+  3. Commit & push; stack redeploys preserving existing data if you manually migrate contents (copy old bind mount data into the new volume beforehand if needed).
+
+#### 7. Environment Variable Overrides
+
+- Portainer allows specifying environment variables in the UI; these override those in the compose file at deploy time.
+- For timezone changes, you can either edit the compose file or add `TZ=Australia/Melbourne` in the UI for quick overrides.
+
+#### 8. Rollbacks / Pinning
+
+- To pin a known-good state, change Repository reference to a specific commit SHA (immutable) in the stack edit view.
+- To roll back: select a prior commit, or revert in Git and push.
+
+#### 9. Converting From Manual (Web Editor) Stack
+
+If you initially deployed by pasting YAML:
+
+1. Duplicate the stack (optional backup).
+2. Remove or stop the original stack (leave volumes intact).
+3. Recreate via Git method pointing to this repo so future changes are Git-driven.
+
+#### 10. Optional Additions
+
+- Watchtower sidecar (auto image update) – generally not needed if you rely on redeploy cadence; evaluate risk of breaking changes in Home Assistant.
+- Backup sidecar that tars `/config` and uploads to S3/Backblaze – outside scope here; can be added later.
+
+### Deploying Portainer Agent for Kubernetes Management
+
+Portainer can also attach to the Kubernetes cluster defined in this repository. This requires deploying the Portainer **Agent** (or full Portainer) inside the cluster, then connecting it from your existing Portainer UI (if you run a central Portainer instance) or accessing the in-cluster Portainer service.
+
+#### 1. Decide Topology
+
+Option A (Central Portainer managing both Docker host & K8s):
+
+- Keep existing external Portainer instance.
+- Deploy only the Portainer **Agent** into Kubernetes.
+- Add environment (endpoint) in the central Portainer UI (Agent option).
+
+Option B (Dedicated Portainer inside cluster):
+
+- Deploy full Portainer (Server + optional Agent) via Helm or manifest.
+- Access via NodePort / Ingress.
+
+For a lightweight approach, Option A is recommended.
+
+#### 2. Install Portainer Agent (Kubernetes)
+
+Apply the official manifest (adjust namespace if desired):
+
+```sh
+kubectl apply -f https://downloads.portainer.io/ce2-33/portainer-agent-k8s-lb.yaml
+```
+
+This creates:
+
+- Namespace `portainer`
+- ServiceAccount / RBAC
+- Deployment `portainer-agent`
+- LoadBalancer (or NodePort depending on manifest variant) service exposing the agent (default 9001)
+
+If you do not have a LoadBalancer implementation, you can edit the Service to `NodePort`:
+
+```sh
+kubectl -n portainer patch svc portainer-agent --type='json' \
+  -p='[{"op":"replace","path":"/spec/type","value":"NodePort"}]'
+```
+
+Retrieve the node port:
+
+```sh
+kubectl -n portainer get svc portainer-agent -o wide
+```
+
+#### 3. Add Kubernetes Environment in Portainer UI
+
+1. In Portainer: Environments → Add environment.
+2. Choose: Agent.
+3. Endpoint URL: `tcp://<node-ip>:<nodePort or LB IP>:9001` (omit protocol if UI asks only for host/port; some versions just require the IP:port pair).
+4. Name it: `homelab-k8s`.
+5. (Optional) Assign groups / tags for organization.
+6. Save – Portainer will query the agent and list namespaces, etc.
+
+#### 4. (Alternative) Deploy Full Portainer in Cluster
+
+If you prefer running Portainer entirely inside Kubernetes (and optionally decommissioning the external instance):
+
+```sh
+kubectl apply -f https://downloads.portainer.io/ce2-33/portainer-lb.yaml
+```
+
+Then access the LoadBalancer / NodePort at port 9000 (UI) and 9443 (if TLS enabled). Initialize admin credentials, then add your external Docker host via **Agent** or **Docker** endpoint as needed.
+
+#### 5. Security Considerations
+
+- Limit network exposure: prefer private network / VPN (e.g. Tailscale) for Agent port (9001).
+- Use Portainer roles to restrict access to namespaces if on Business Edition (RBAC granularity). Community Edition is broader in scope.
+- Keep Portainer updated; watch release notes for CVEs.
+
+#### 6. Uninstalling the Agent
+
+```sh
+kubectl delete ns portainer
+```
+
+This removes the agent resources (ensure no other workloads reside in the `portainer` namespace before deleting).
+
+#### 7. Troubleshooting Agent Connectivity
+
+| Symptom                         | Likely Cause                               | Resolution                                               |
+| ------------------------------- | ------------------------------------------ | -------------------------------------------------------- |
+| Timeout when adding environment | Service type unsupported or no NodePort/LB | Patch to NodePort or expose via Ingress/Tailscale proxy  |
+| 403 / RBAC errors               | Missing ClusterRole binding                | Re-apply official manifest; verify ServiceAccount        |
+| Namespaces not listing          | Agent not fully ready                      | Check `kubectl logs -n portainer deploy/portainer-agent` |
+
+### Summary of External Management Flow
+
+| Component        | Location                  | Deployment Method             | Purpose                           |
+| ---------------- | ------------------------- | ----------------------------- | --------------------------------- |
+| Home Assistant   | Docker host (outside K8s) | Git-based Portainer stack     | Home automation, host networking  |
+| Portainer Agent  | Kubernetes cluster        | Official manifest             | Remote management endpoint        |
+| Portainer Server | External VM (existing)    | Manual install (pre-existing) | Central UI (manages Docker + K8s) |
+
+With this approach you achieve separation of concerns: Kubernetes workloads managed declaratively via Helmfile; specialized host-centric workload (Home Assistant) managed via Git + Portainer; unified visibility in Portainer across both environments.
 
 ### 1. Configure Terraform Variables
 

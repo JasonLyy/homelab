@@ -20,7 +20,7 @@ resource "proxmox_virtual_environment_vm" "talos-master-1" {
   }
 
   network_device {
-    bridge = "vmbr0"
+    bridge = "vmbr1"
   }
 
   disk {
@@ -67,7 +67,7 @@ resource "proxmox_virtual_environment_vm" "talos-worker-1" {
   }
 
   network_device {
-    bridge = "vmbr0"
+    bridge = "vmbr1"
   }
 
   disk {

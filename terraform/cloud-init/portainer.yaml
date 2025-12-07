@@ -1,0 +1,18 @@
+#cloud-config
+users:
+  - default
+  - name: ubuntu
+    groups: sudo
+    shell: /bin/bash
+    sudo: ['ALL=(ALL) NOPASSWD:ALL']
+    ssh_authorized_keys:
+      - ${ssh_key}
+
+package_update: true
+package_upgrade: true
+packages:
+  - docker.io
+  - docker-compose
+runcmd:
+  - systemctl enable --now docker
+  - docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always -v /var/run/docker.sock:/var/run/docker.sock -v portainer_data:/data portainer/portainer-ce:latest
