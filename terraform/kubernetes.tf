@@ -12,7 +12,7 @@ resource "proxmox_virtual_environment_vm" "talos-master-1" {
 
   cpu {
     cores = 4
-    type  = "x86-64-v2-AES"
+    type  = "host"
   }
 
   memory {
@@ -59,11 +59,11 @@ resource "proxmox_virtual_environment_vm" "talos-worker-1" {
 
   cpu {
     cores = 4
-    type  = "x86-64-v2-AES"
+    type  = "host"
   }
 
   memory {
-    dedicated = 4293 // 4096 MiB
+    dedicated = 8192
   }
 
   network_device {
