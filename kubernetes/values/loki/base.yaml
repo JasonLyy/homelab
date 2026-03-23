@@ -29,6 +29,13 @@ loki:
 
 minio:
   enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
   persistence:
     size: 25Gi
     storageClass: local-path
@@ -66,6 +73,13 @@ deploymentMode: SingleBinary
 
 singleBinary:
   replicas: 1
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1536Mi
   persistence:
     enabled: true
     storageClass: local-path

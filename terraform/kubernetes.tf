@@ -16,7 +16,7 @@ resource "proxmox_virtual_environment_vm" "talos-master-1" {
   }
 
   memory {
-    dedicated = 2148 // 2048 MiB 
+    dedicated = 2048
   }
 
   network_device {
@@ -63,7 +63,7 @@ resource "proxmox_virtual_environment_vm" "talos-worker-1" {
   }
 
   memory {
-    dedicated = 8192
+    dedicated = 10240
   }
 
   network_device {

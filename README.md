@@ -80,12 +80,16 @@ Add a minimal ACL snippet (merge into your existing policy file):
     "tag:k8s": ["tag:k8s-operator"]
   },
   "autoApprovers": {
-    "exitNode": ["tag:k8s"]
+    "exitNode": ["tag:k8s"],
+    "routes": {
+      "10.0.0.0/24": ["tag:k8s"],
+      "10.0.10.0/24": ["tag:k8s"]
+    }
   }
 }
 ```
 
-This allows the operator (tagged `tag:k8s-operator`) to create the exit node instance (tagged `tag:k8s`) and auto-approve exit node advertising.
+This allows the operator (tagged `tag:k8s-operator`) to create the exit node instance (tagged `tag:k8s`) and auto-approve exit node and subnet route advertising.
 
 #### 3. Create the OAuth Secret
 
@@ -97,7 +101,7 @@ kubectl -n tailscale create secret generic operator-oauth \
   --from-literal=client_secret="<CLIENT_SECRET>"
 ```
 
-Note: The operator (chart v1.86.5) expects the secret name `operator-oauth` with keys `client_id` and `client_secret`.
+Note: The operator (chart v1.94.2) expects the secret name `operator-oauth` with keys `client_id` and `client_secret`.
 
 #### 4. Deploy / Reconcile with Helmfile
 
