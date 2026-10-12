@@ -3,7 +3,6 @@ controller:
   dnsPolicy: ClusterFirstWithHostNet
   service:
     type: ClusterIP
-    externalTrafficPolicy: Local
     nodePorts:
       http: 30080
       https: 30443

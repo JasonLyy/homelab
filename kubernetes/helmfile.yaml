@@ -21,6 +21,7 @@ releases:
     namespace: ingress
     createNamespace: true
     chart: ingress-nginx/ingress-nginx
+    version: 4.14.1
     wait: true
     timeout: 300
     values:
