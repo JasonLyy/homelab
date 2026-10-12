@@ -34,9 +34,11 @@ sudo install -m 0755 "$kubectl_tmp" /usr/local/bin/kubectl
 # Create config directories
 mkdir -p ~/.talos ~/.kube
 
-# Use Terraform's Talos credentials to retrieve a current kubeconfig.
+# Reuse locally renewed Talos credentials; otherwise load Terraform's output.
 echo "Fetching configurations from Terraform..."
-terraform output -raw talosconfig > ~/.talos/config
+if [ ! -s "$HOME/.talos/config" ]; then
+    terraform output -raw talosconfig > ~/.talos/config
+fi
 talosctl --endpoints="$KUBERNETES_API_HOST" --nodes="$KUBERNETES_API_HOST" kubeconfig --merge=false --force "$HOME/.kube/config"
 cluster="$(kubectl --kubeconfig="$HOME/.kube/config" config view --minify -o jsonpath='{.contexts[0].context.cluster}')"
 kubectl --kubeconfig="$HOME/.kube/config" config set-cluster "$cluster" --server="https://${KUBERNETES_API_HOST}:6443"

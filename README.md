@@ -378,7 +378,7 @@ The script defaults to the reachable API host `10.0.10.200`; override it with `K
 This script will:
 
 - Install `talosctl` and `kubectl` if needed
-- Retrieve a kubeconfig from Talos and point it at the reachable Kubernetes API endpoint
+- Reuse an existing Talos config (or fetch it from Terraform), retrieve a kubeconfig from Talos, and point it at the reachable Kubernetes API endpoint
 - Set proper permissions on config files
 
 ### 4. Deploy Local Storage Provisioner
