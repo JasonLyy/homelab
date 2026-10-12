@@ -9,7 +9,7 @@ This repository contains configurations for a Kubernetes homelab environment run
 - **Hypervisor**: Proxmox VE with ZFS storage
 - **Operating System**: Talos Linux v1.9.5 (immutable Kubernetes OS)
 - **Cluster**: 1 control plane + 1 worker node (control plane scheduling enabled)
-- **Network**: Static IP configuration (192.168.1.200/201)
+- **Network**: VM IPs `192.168.1.200/201`; client-reachable control-plane endpoint `10.0.10.200` (Kubernetes API on port 6443)
 - **Storage**: Local Path Provisioner with hostPath-based persistent volumes
 
 ### Application Stack
@@ -373,10 +373,12 @@ chmod +x setup-talos-kube.sh
 ./setup-talos-kube.sh
 ```
 
+The script defaults to the reachable API host `10.0.10.200`; override it with `KUBERNETES_API_HOST` if needed. It installs kubectl from the cluster-compatible 1.32 release line; override that minor line with `KUBECTL_MINOR` when upgrading the cluster.
+
 This script will:
 
 - Install `talosctl` and `kubectl` if needed
-- Configure the Talos and Kubernetes access credentials
+- Retrieve a kubeconfig from Talos and point it at the reachable Kubernetes API endpoint
 - Set proper permissions on config files
 
 ### 4. Deploy Local Storage Provisioner
