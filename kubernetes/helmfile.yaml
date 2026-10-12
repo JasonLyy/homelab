@@ -1,10 +1,6 @@
 repositories:
   - name: ingress-nginx
     url: https://kubernetes.github.io/ingress-nginx
-  - name: grafana
-    url: https://grafana.github.io/helm-charts
-  - name: prometheus-community
-    url: https://prometheus-community.github.io/helm-charts
   - name: tailscale
     url: https://pkgs.tailscale.com/helmcharts
   - name: bjw-s
@@ -40,41 +36,6 @@ releases:
     timeout: 600
     values:
       - ./values/omada-controller/base.yaml
-
-  - name: grafana
-    namespace: monitoring
-    createNamespace: true
-    chart: grafana/grafana
-    values:
-      - ./values/grafana/base.yaml
-      - ./security.yaml
-
-  - name: loki
-    namespace: monitoring
-    chart: grafana/loki
-    wait: true
-    timeout: 300
-    cleanupOnFail: true
-    values:
-      - ./values/loki/base.yaml
-      - ./security.yaml
-
-  - name: alloy
-    namespace: monitoring
-    chart: grafana/alloy
-    wait: true
-    timeout: 300
-    values:
-      - ./values/alloy/base.yaml
-      - ./security.yaml
-
-  - name: kube-prometheus-stack
-    namespace: monitoring
-    chart: prometheus-community/kube-prometheus-stack
-    wait: true
-    timeout: 600
-    values:
-      - ./values/kube-prometheus-stack/base.yaml
 
   - name: tailscale-operator
     namespace: tailscale

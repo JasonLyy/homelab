@@ -15,8 +15,6 @@ This repository contains configurations for a Kubernetes homelab environment run
 ### Application Stack
 
 - **Ingress**: NGINX Controller with NodePort (30080/30443)
-- **Monitoring**: Prometheus + Grafana + Node Exporter
-- **Logging**: Loki + Alloy (modern replacement for Promtail)
 - **Security**: Pod security contexts, non-root containers, capability dropping
 - **Secure Remote Access**: Tailscale Operator providing a Kubernetes-based exit node
 
@@ -43,11 +41,10 @@ homelab/
 │   ├── kustomize/         # Kustomize configuration
 │   │   └── local-path-provisioner/  # Storage provisioner
 │   └── values/            # Helm chart values
-│       ├── alloy/         # Observability agent config
-│       ├── grafana/       # Dashboard configuration
 │       ├── ingress-nginx/ # Ingress controller config
-│       ├── kube-prometheus-stack/  # Prometheus stack
-│       └── loki/          # Log aggregation config
+│       ├── metrics-server/ # Kubernetes metrics API
+│       ├── omada-controller/ # Omada controller config
+│       └── tailscale-operator/ # Tailscale operator config
 └── terraform/             # Infrastructure definitions
     ├── main.tf            # Terraform main configuration
     ├── kubernetes.tf      # Kubernetes cluster creation
@@ -404,42 +401,11 @@ Deploy all applications defined in helmfile.yaml:
 helmfile sync
 ```
 
-This will deploy (in order):
-
-1. **Ingress NGINX Controller** (with NodePort access)
-2. **Grafana** (dashboard and visualization)
-3. **Loki** (log aggregation with MinIO backend)
-4. **Alloy** (observability agent, replaces Promtail)
-5. **Prometheus Stack** (metrics, alerting, and monitoring)
+This deploys the applications currently defined in `kubernetes/helmfile.yaml`, including metrics-server, ingress-nginx, Omada Controller, and the Tailscale Operator.
 
 ## Accessing Services
 
-After deployment, you can access the following services:
-
-### Web Interfaces
-
-- **Grafana**: http://grafana.local (dashboards and visualization)
-- **Alloy**: http://alloy.local (observability agent status)
-
-### Internal Services (via kubectl port-forward)
-
-- **Prometheus**: `kubectl port-forward -n monitoring svc/kube-prometheus-stack-prometheus 9090:9090`
-- **Alertmanager**: `kubectl port-forward -n monitoring svc/kube-prometheus-stack-alertmanager 9093:9093`
-- **Loki**: `kubectl port-forward -n monitoring svc/loki 3100:3100`
-
-### Network Access
-
-- **Ingress Controller**: NodePort 30080 (HTTP) and 30443 (HTTPS)
-- **OPNsense Syslog**: TCP port 5140 (forwarded through ingress to Alloy)
-
-### DNS Configuration
-
-Add these entries to your local DNS or `/etc/hosts`:
-
-```
-<node-ip>  grafana.local
-<node-ip>  alloy.local
-```
+The ingress controller is exposed on NodePorts 30080 (HTTP) and 30443 (HTTPS). Application access depends on the services currently deployed in the cluster.
 
 ## Component Details
 
@@ -459,30 +425,6 @@ Add these entries to your local DNS or `/etc/hosts`:
 - **Ingress NGINX**: Kubernetes ingress controller
   - NodePort service for external access
   - JSON logging format for structured logs
-  - TCP port 5140 forwarding for OPNsense
-
-### Observability Stack
-
-- **Prometheus**: Metrics collection and alerting engine
-  - 15-day retention, 8GB retention size
-  - Scrapes cluster metrics, node metrics, and application metrics
-- **Grafana**: Visualization and dashboarding
-  - Pre-configured with Prometheus and Loki data sources
-  - Automatic dashboard discovery from ConfigMaps
-  - 10GB persistent storage
-- **Loki**: Log aggregation system
-  - Single binary deployment mode for simplicity
-  - MinIO backend for object storage (25GB)
-  - 48-hour log retention
-  - Pattern ingestion enabled for structured logs
-- **Alloy**: All-in-one observability agent
-  - Replaces Promtail with modern River configuration
-  - Kubernetes log collection from all pods
-  - OPNsense syslog reception on TCP port 5140
-  - Forwards logs to Loki instance
-- **Alertmanager**: Alert routing and management
-  - Integrated with Prometheus for alert handling
-  - 2GB persistent storage
 
 ### Security Features
 
@@ -518,11 +460,9 @@ Add these entries to your local DNS or `/etc/hosts`:
 - **Persistent data**: Backup `/var/local-path-provisioner` on nodes
 - **Terraform state**: Stored in Terraform Cloud (remote backend)
 
-### Monitoring and Alerting
+### Retired Monitoring Stack
 
-- **Grafana dashboards**: Auto-discovered from ConfigMaps with label `grafana_dashboard=1`
-- **Prometheus rules**: Comprehensive alerting rules for cluster health
-- **Log analysis**: Use Loki for centralized log analysis and troubleshooting
+The Grafana, Loki, Alloy, and kube-prometheus-stack Helm releases, the `monitoring` namespace, their four persistent volume claims (62 GiB), and the Prometheus Operator CRDs have been removed. The OPNsense syslog receiver mapping was also removed from the ingress configuration and live ingress service. OPNsense's source-side syslog destination is external to this repository and must be disabled on the OPNsense device.
 
 ### Troubleshooting
 
@@ -544,31 +484,7 @@ Add these entries to your local DNS or `/etc/hosts`:
 
 - **30080**: HTTP ingress (external access)
 - **30443**: HTTPS ingress (external access)
-- **30514**: OPNsense syslog (external to internal port 5140)
-
-### Internal Service Discovery
-
-- **Prometheus**: `kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090`
-- **Loki**: `loki.monitoring.svc.cluster.local:3100`
-- **Alloy**: `alloy.monitoring.svc.cluster.local:12345`
-
 ## Advanced Configuration
-
-### OPNsense Integration
-
-Configure OPNsense to send syslog to `<node-ip>:30514`:
-
-1. System → Advanced → Logging
-2. Add remote syslog server: `<node-ip>:30514`
-3. Logs will be forwarded to Loki via Alloy
-
-### Custom Dashboards
-
-Add custom Grafana dashboards:
-
-1. Create ConfigMap with label `grafana_dashboard: "1"`
-2. Place in `monitoring` namespace
-3. Dashboard will be auto-discovered
 
 ### Storage Classes
 

@@ -7,8 +7,6 @@ controller:
     nodePorts:
       http: 30080
       https: 30443
-      tcp:
-        5140: 30514
 
   replicaCount: 1
   autoscaling:
@@ -34,9 +32,6 @@ controller:
   # Security (tighten for internal networks)
   allow-snippet-annotations: false # Disable risky snippets
   enable-ssl-passthrough: false # Disable unless needed
-
-tcp:
-  "5140": "monitoring/alloy:5140"
 
 defaultBackend:
   enabled: true
